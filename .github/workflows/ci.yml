@@ -43,7 +43,8 @@ jobs:
 
       # Step 4: Build the project
       - name: Build with Cargo
-        run: cargo build --verbose
+        run|
+          cargo build --verbose
 
       # Step 5: Run tests
       - name: Run tests
