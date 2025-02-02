@@ -46,6 +46,7 @@ jobs:
         run: |
           cargo build --verbose
           ls
+          ls target/
 
       # Step 5: Run tests
       - name: Run tests
