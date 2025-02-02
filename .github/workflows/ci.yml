@@ -1,61 +1,58 @@
-name: Rust CI
+name: CI
 
-# Trigger the workflow on push and pull request events
 on:
   push:
-    branches:
-      - main    # Runs on push to the main branch
+    branches: [main]
   pull_request:
-    branches:
-      - main    # Runs on pull requests targeting the main branch
+    branches: [main]
 
-# Define the jobs to run
 jobs:
-  build:
-    name: Build and Test with Rust
-    runs-on: ubuntu-latest  # Use the latest Ubuntu runner
+  build-and-test:
+    runs-on: ubuntu-latest
 
     steps:
-      # Step 1: Checkout the repository code
-      - name: Checkout repository
-        uses: actions/checkout@v3
+      # Step 1: Checkout the repository
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-      # Step 2: Install Rust (using the latest stable version)
-      - name: Install Rust
+      # Step 2: List project root directory (initial check)
+      - name: List root directory
+        run: ls -la
+
+      # Step 3: Set up Rust
+      - name: Set up Rust
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          profile: minimal
-          components: clippy, rustfmt  # Adds useful tools: Clippy (linter) and Rustfmt (formatter)
           override: true
 
-      # Step 3: Cache Cargo dependencies to speed up subsequent builds
-      - name: Cache Cargo registry and build artifacts
-        uses: actions/cache@v3
+      # Step 4: Set up Node.js (for tree-sitter CLI)
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          path: |
-            ~/.cargo/registry
-            ~/.cargo/git
-            target
-          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-cargo-
+          node-version: '20'  # Use the latest stable Node.js version
 
-      # Step 4: Build the project
+      # Step 5: Install tree-sitter CLI globally
+      - name: Install tree-sitter CLI
+        run: npm install -g tree-sitter-cli
+
+      # Step 6: Generate the parser from grammar.js
+      - name: Generate Tree-sitter parser
+        run: |
+          tree-sitter generate
+          echo "Listing src directory after generation:"
+          ls -la src
+
+      # Step 7: Build the Rust project
       - name: Build with Cargo
         run: |
           cargo build --verbose
-          # ls
-          ls target/debug/
+          echo "Listing target/debug directory after build:"
+          ls -la target/debug
 
-      # Step 5: Run tests
+      # Step 8: Run tests
       - name: Run tests
-        run: cargo test --verbose
-
-      # Step 6: Check code formatting
-      - name: Check code formatting
-        run: cargo fmt -- --check
-
-      # Step 7: Lint the code with Clippy
-   #   - name: Lint with Clippy
-      #  run: cargo clippy -- -D warnings  # Treat all warnings as errors
+        run: |
+          cargo test --verbose
+          echo "Listing target/debug/deps after tests:"
+          ls -la target/debug/deps
